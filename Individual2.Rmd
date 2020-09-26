@@ -1,0 +1,153 @@
+---
+title: "Lab3"
+author: "Molly Carrick"
+date: "9/17/2020"
+output: html_document
+---
+# Loading Data and Packages
+```{r}
+library(ggplot2)
+library(readxl)
+library(dplyr)
+dat<-readxl::read_xls('./GSS.xls')
+str(dat)
+```
+# Cleaning Data
+```{r}
+dat<-dat%>%
+  rename(Age='Age of respondent')%>%
+  rename(Sex='Respondents sex')%>%
+  rename(Happy='General happiness')%>%
+  rename(PoliticalParty='Political party affiliation')%>%
+  rename(FamilyIncome='Total family income')%>%
+  rename(EducationLevel='Highest year of school completed')%>%
+  rename(MaritalStatus='Marital status')%>%
+  rename(GeneralHappiness='Happy')%>%
+  mutate(Age=as.numeric(Age))%>%
+  mutate(GeneralHappiness=factor(GeneralHappiness))%>%
+  mutate(Sex=factor(Sex))%>%
+  mutate(MaritalStatus=factor(MaritalStatus))%>%
+  mutate(PoliticalParty=factor(PoliticalParty))%>%
+  mutate(EducationLevel=as.numeric(EducationLevel))%>%
+  mutate(FamilyIncome=factor(FamilyIncome))
+
+```
+# Average Years of Education for the Respondents with each Political Party Affiliation
+```{r}
+
+AvgEduInPol<-dat%>%
+  group_by(PoliticalParty)%>%
+  summarize(mean_education=mean(EducationLevel,na.rm=TRUE))%>%
+  arrange(mean_education)
+
+AvgEduInPol
+
+ggplot(AvgEduInPol, aes(x=PoliticalParty, weight=mean_education))+geom_bar()+coord_flip()+ggtitle("Mean Education Year in Respondents' Political Parties")+ylab("Highest Year of Education (mean)") +xlab("Political Party")
+
+```
+
+From the data frame, which is arranged by mean education, the respondents with the least amount of education did not know what party they belonged to.  The highest education levels belonged to those who identified as strong Republicans.  If we were to round these numbers to the nearest full year of education, then Independents (near democrats and near republicans), not strong Republicans, not strong Democrats, other, and strong Republicans would all have the same education level (13 years).  Strong democrats, Independents, and the respondents who did not give an answer would have all havw 12 years of education.  The people who did not know would have 11 years.  On average, people who identify as republican are more educated than people who identify as democrat.  The people who did not know, refused to answer, or identified as independent (more neutral answers) were the least educated.
+
+# Records for the "Better educated" in each Political Party
+```{r}
+HighEduInPolParty<-dat%>%
+  group_by(PoliticalParty)
+
+HighEduInPolParty<-filter(HighEduInPolParty, EducationLevel>median(EducationLevel,na.rm=TRUE))
+
+HighEduInPolParty%>%head
+```
+
+This is the beginning of the data frame of the more highly educated people in each party.
+
+
+# Happiness vs. Marital Status
+```{r}
+happy<-filter(dat, GeneralHappiness %in% c('Very happy','Pretty happy'))
+happy$MaritalStatus<-factor(happy$MaritalStatus, levels=(c("Married","Never married","Divorced","Widowed","Separated","No answer")))
+  
+ggplot(happy, aes(x=MaritalStatus))+geom_bar()+ggtitle("Number of Happy Respondents and Their Marital Status")+xlab("Marital Status")+ylab("Number of Happy Respondents")
+
+```
+
+From the graph, it is clear that the majority of people who identified as happy are married.  At about a third as much are the people who never married. This is followed by Divorced, which is surprisingly more than Widowed.  It appears that not many people who are Separated identify as happy, and the number of people who did not answer the question and also identified as happy is miniscule.   
+
+```{r}
+sad<-filter(dat, GeneralHappiness %in% 'Not too happy')
+sad$MaritalStatus<-factor(sad$MaritalStatus, levels=(c("Married","Never married","Divorced","Widowed","Separated","No answer")))
+
+ggplot(sad, aes(x=MaritalStatus))+geom_bar()+ggtitle('Number of Unhappy Respondents and Their Marital Status')+xlab('Marital Status')+ylab('Numberof Unhappy Respondents')
+```
+
+From this graph, it is clear that the majority of people who identified as "Not too happy" are also Married.  The bars in this graph have more of a consistent decline, but they still follow the same order as the happiness graph.  
+
+```{r}
+
+hapState<-filter(dat, GeneralHappiness %in% c('Not too happy','Very happy','Pretty happy'))
+hapState$MaritalStatus<-factor(hapState$MaritalStatus, levels=(c("Married","Never married","Divorced","Widowed","Separated","No answer")))
+ggplot(hapState, aes(x=MaritalStatus, fill=GeneralHappiness))+geom_bar(position='dodge')+ggtitle("Happiness vs. Marital Status")+xlab('Marital Status')+ylab('Number of Respondents')
+
+```
+
+This graph allows us to compare the bars within each Marital Status Group.  It is clear that most people in each group identify as "Pretty happy".  In each marital group the number of "Very happy" outweighs the "Not too happy" except for in the Seperated column.  In the Divorced column, "Not too happy" and "Very happy" are about equal.  In general, the majority of people who identify as happy are married and they are much more frequent than the people who identify as "Not too happy".
+
+
+# Party Affiliation effect on Happiness vs. Marital Status"
+
+```{r}
+ggplot(happy, aes(x=MaritalStatus, fill=PoliticalParty))+geom_bar()+ggtitle("Number of Happy Respondents and Their Marital Status")+xlab("Marital Status")+ylab("Number of Happy Respondents")
+
+```
+
+From the graph, it does not appear that Political Pary Affiliation has much of an effect, if at all, on the relationship between marital status and happiness.  There is a fairly even spread of all the political party affiliations within each column of Marital Status.  Meaning there are republicans, democrats, and independents in every column.  The amounts in each party get proportionally smaller with the columns, so it is not as if an overwhelming number of married people are republican.  There is approximately an even spread.
+
+
+# Marital Status vs. Education
+
+```{r}
+dat$MaritalStatus<-factor(dat$MaritalStatus, levels=(c("Married","Never married","Divorced","Widowed","Separated","No answer")))
+ggplot(dat, aes(x=MaritalStatus, y=EducationLevel))+geom_boxplot()+ggtitle("Marital Status vs. Education Level")+xlab('Marital Status')+ylab('Education Level')
+```
+
+```{r}
+AvgEduInMar<-dat%>%
+  group_by(MaritalStatus)%>%
+  summarize(mean_education=mean(EducationLevel,na.rm=TRUE))%>%
+  arrange(mean_education)
+
+AvgEduInMar
+
+ggplot(AvgEduInMar, aes(x=MaritalStatus, weight=mean_education))+geom_bar()+coord_flip()+ggtitle("Mean Education Year by Marital Status")+ylab("Highest Year of Education (mean)") +xlab("Marital Status")
+
+```
+
+Based on the plots, the mean education levels in each Marital Status are similar.  The means do not differ as much as when we compared education level and poplitical party affiliations.  Surprisingly, the highest level of education belongs to the people who did not answer the question on Marital Status.  This is possibly because people who have a higher level of education may tend to have more pride and so they avoided answering the marital status question in order to preserve their dignity. After, "no answer", the highest education level goes to the people who are never married.  This could be because they are more focused on their careers than in relationships.  This would also account for why "Divorced" is the third highest in education.  Widowed has the lowest mean education level.
+
+
+# Family Income vs. Happiness
+```{r}
+happy$FamilyIncome<-factor(happy$FamilyIncome, levels=(c("Lt $1000","$1000 to 2999","$3000 to 3999","$4000 to 4999","$5000 to 5999","$6000 to 6999","$7000 to 7999", "$8000 to 9999", "$10000 - 14999", "$15000 - 19999","$20000 - 24999", "$25000 or more","Don't know","Refused","Not applicable", "No answer")))
+ggplot(happy, aes(x=FamilyIncome))+geom_bar()+coord_flip()+ggtitle("Number of Happy Respondents and Their Family Income")+xlab('Family Income')+ylab('Number of Happy Respondents')
+```
+
+```{r}
+hapState$FamilyIncome<-factor(hapState$FamilyIncome, levels=(c("Lt $1000","$1000 to 2999","$3000 to 3999","$4000 to 4999","$5000 to 5999","$6000 to 6999","$7000 to 7999", "$8000 to 9999", "$10000 - 14999", "$15000 - 19999","$20000 - 24999", "$25000 or more","Don't know","Refused","Not applicable", "No answer")))
+ggplot(hapState, aes(x=FamilyIncome, fill=GeneralHappiness))+geom_bar(position='dodge')+ggtitle("Happiness vs. Family Income")+xlab('Family Income')+ylab('Number of Respondents')+coord_flip()
+
+```
+
+From the graphs it is clear that most respondents identify as "Pretty happy" and have an income of $25,000+.  Interestingly, the greatest number of unhappy respondents also make $25,000+.  Perhaps the most interesting thing however, is that the second highest group of happy people makes between $10,000 and $15,000.  It would be natural to assume that they would make between $15,000 and $25,000, but that is not the case. 
+
+
+# Age vs. Happiness
+```{r}
+ggplot(happy, aes(x=Age))+geom_bar()+ggtitle("Number of Happy Respondents and Their Ages")+ylab("Number of Happy Respondents")
+```
+
+This graph shows that the number of people who identify as happy is the highest somewhere in the early thirties and it shows a steady decline all the way through the eighties.
+
+```{r}
+ggplot(sad, aes(x=Age))+geom_bar()+ggtitle("Number of Unhappy Respondents and Their Ages")+ylab("Number of Unhappy Respondents")
+```
+
+This graph shows a similar trend to the first one.  The difference is that the number of unhappy respondents appears to peak late twenties.  There is also a decline as age increases.  One would think that the two graphs above would show opposite trends, since one is measuring happiness and the other unhappiness. This probalby means that there were just more respondents aged 25-35 since both graphs peak around this point.
