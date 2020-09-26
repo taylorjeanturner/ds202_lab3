@@ -8,4 +8,56 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+```{r, inlcude=FALSE}
+library(dplyr)
+library(readxl)
+library('ggplot2')
+dat <- readxl::read_xls('./GSS.xls')
+dat <- dat%>% 
+  rename(year = 'Gss year for this respondent', happiness = 'General happiness', partyid = 'Political party affiliation', income = 'Total family income', sex = 'Respondents sex', educ = 'Highest year of school completed', age = 'Age of respondent', marital = 'Marital status', id = 'Respondent id number', ballot = 'Ballot used for interview')
+dat$educ <- suppressWarnings(as.numeric(dat$educ))
+dat$age <- suppressWarnings(as.numeric(dat$age))
+```
+1. We can see that for all party identifications, the average years of school is from 12 to 14 years of schooling. The political party identification with the greatest average years of school is "strong republican." The political party identification with the smallest average years of school is "don't know".
+```{r}
+dat%>%
+  select(partyid, educ)%>%
+  filter(educ<21)%>%
+  group_by(partyid)%>%
+  summarise(educ_mean = mean(educ), .groups='drop')
+```
 
+2.
+```{r}
+df <- dat%>%
+  group_by(partyid)%>%
+  filter(educ<21)%>%
+  mutate(partyMedian = median(educ))%>%
+  filter(educ > partyMedian)%>%
+  select(-partyMedian)%>%
+  ungroup()
+
+str(df)
+```
+3. From the plot, we can see that "married" has the most happy respondents. The group with the least amount of happy people are those who did not answer. However, if we disregard the "no answer" category, the group with the least amount of happy people are those who are separated.
+For this I used the variables happiness and marital.
+```{r}
+dat%>% 
+  select(happiness, marital)%>% 
+  ggplot(aes(x=marital, fill=happiness)) + geom_bar(position='fill') + ggtitle("Happiness and Marital Status")
+
+dat%>% 
+  select(happiness, marital)%>% 
+  group_by(marital)%>%
+  count(happiness)
+```
+
+6. My first question is "how does the respondent's sex affect the happiness and marital status?" This question is similar to question 4, but replacing political party with gender. We can see that respondents that are married are still the happiest, regardless of gender. Married women have the most happy repsonses. For this I used the variables happiness, sex, and marital.
+```{r}
+ggplot(dat, aes(x=marital, fill=happiness)) + geom_bar() + facet_wrap(~sex, scales="free_x") + ggtitle("Happiness, Marital Status, and Sex") + theme(axis.text.x = element_text(angle = 90))
+
+dat%>%
+  select(happiness, sex, marital)%>%
+  group_by(sex, marital)%>%
+  count(happiness)
+```
