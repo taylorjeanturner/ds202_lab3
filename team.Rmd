@@ -27,7 +27,7 @@ dat%>%
   summarise(educ_mean = mean(educ), .groups='drop')
 ```
 
-2. This is the structure of the data frame of the more highly educated people in each party.
+2. This is the structure of the data frame of the more highly educated people in each party. In order to obtain this, I grouped the data by political party. I then filtered the education years to only under 21, because any number over 20 represented "no answer." I then added a new column that was the median amount of education years for each political party and again filtered the data to only include rows with years of education higher than the median. To clean things up, I next got rid of the column I just made and ungrouped the data.
 ```{r}
 df <- dat%>%
   group_by(partyid)%>%
@@ -72,8 +72,8 @@ dat%>%
   count(happiness)
 ```
 
-5. How is marrital status related to the education of a respondent? What are possible reasons accounting for the patterns you see?
-Based on the plots below, the mean education levels in each Marital Status are similar.  The means do not differ as much as when we compared education level and poplitical party affiliations.  Surprisingly, the highest level of education belongs to the people who did not answer the question on Marital Status.  This is possibly because people who have a higher level of education may tend to have more pride and so they avoided answering the marital status question in order to preserve their dignity. After, "no answer", the highest education level goes to the people who are never married.  This could be because they are more focused on their careers than in relationships.  This would also account for why "Divorced" is the third highest in education.  Widowed has the lowest mean education level.  For this I used variables marital and educ(education).
+5. How is marital status related to the education of a respondent? What are possible reasons accounting for the patterns you see?
+Based on the plots below, the mean education levels in each Marital Status are similar.  The means do not differ as much as when we compared education level and political party affiliations.  Surprisingly, the highest level of education belongs to the people who did not answer the question on Marital Status.  This is possibly because people who have a higher level of education may tend to have more pride and so they avoided answering the marital status question in order to preserve their dignity. After, "no answer", the highest education level goes to the people who are never married.  This could be because they are more focused on their careers than in relationships.  This would also account for why "Divorced" is the third highest in education.  Widowed has the lowest mean education level.  For this I used variables marital and educ(education).
 
 ```{r}
 levels(dat$marital)
