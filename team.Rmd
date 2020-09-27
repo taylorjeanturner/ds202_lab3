@@ -1,6 +1,6 @@
 ---
 title: "team.Rmd"
-author: "Taylor Turner"
+author: "Taylor Turner and Molly Carrick"
 date: "9/22/2020"
 output: html_document
 ---
@@ -18,7 +18,7 @@ dat <- dat%>%
 dat$educ <- suppressWarnings(as.numeric(dat$educ))
 dat$age <- suppressWarnings(as.numeric(dat$age))
 ```
-1. We can see that for all party identifications, the average years of school is from 12 to 14 years of schooling. The political party identification with the greatest average years of school is "strong republican." The political party identification with the smallest average years of school is "don't know".
+1. We can see that for all party identifications, the average years of school is from 12 to 14 years of schooling. The political party identification with the greatest average years of school is "strong republican." The political party identification with the smallest average years of school is "don't know".  On average, people who identify as republican are more educated than people who identify as democrat.  The people who did not know, refused to answer, or identified as independent (more neutral answers) were the least educated.  
 ```{r}
 dat%>%
   select(partyid, educ)%>%
@@ -27,7 +27,7 @@ dat%>%
   summarise(educ_mean = mean(educ), .groups='drop')
 ```
 
-2.
+2. This is the structure of the data frame of the more highly educated people in each party.
 ```{r}
 df <- dat%>%
   group_by(partyid)%>%
@@ -52,12 +52,74 @@ dat%>%
   count(happiness)
 ```
 
-6. My first question is "how does the respondent's sex affect the happiness and marital status?" This question is similar to question 4, but replacing political party with gender. We can see that respondents that are married are still the happiest, regardless of gender. Married women have the most happy repsonses. For this I used the variables happiness, sex, and marital.
+
+4. The first plot below displays data only from respondents who said they were "very happy" or "pretty happy".  This allows us to see if people of a certain political party tend to be happier.  From the graph, it does not appear that Political Pary Affiliation has much of an effect, if at all, on the relationship between marital status and happiness.  There is a fairly even spread of all the political party affiliations within each column of Marital Status.  Meaning there are republicans, democrats, and independents in every column.  The second plot below displays a graph for each political party.  In addition, it includes data from respondents who said they were "not too happy".  This plot shows similar trends for each political party.  The one exception being for Strong Republican bar chart.  In this chart, The number of very happy people outweigh the number of pretty happy people who are also married.  In general, political party afiliation does not affect the relationship between marital status and happiness. For this I used variables happiness, marital, and partyid.
+
+```{r}
+happy<-filter(dat, happiness %in% c('Very happy','Pretty happy'))
+happy$marital<-factor(happy$marital, levels=(c("Married","Never married","Divorced","Widowed","Separated","No answer")))
+
+hapState<-filter(dat, happiness %in% c('Not too happy','Very happy','Pretty happy'))
+hapState$marital<-factor(hapState$marital, levels=(c("Married","Never married","Divorced","Widowed","Separated","No answer")))
+
+ggplot(happy, aes(x=marital, fill=partyid))+geom_bar(position='fill')+ggtitle("Percent of Happy Respondents and Their Marital Status")+xlab("Marital Status")+ylab("Percent of Happy Respondents")
+
+ggplot(hapState, aes(x=marital, fill=happiness))+geom_bar(position='dodge')+facet_wrap(~partyid)+ggtitle("Happiness vs. Marital Status")+xlab('Marital Status')+ylab('Number of Respondents')+coord_flip()
+
+dat%>%
+  select(happiness, marital, partyid)%>%
+  group_by(marital, partyid)%>%
+  count(happiness)
+```
+
+5. How is marrital status related to the education of a respondent? What are possible reasons accounting for the patterns you see?
+Based on the plots below, the mean education levels in each Marital Status are similar.  The means do not differ as much as when we compared education level and poplitical party affiliations.  Surprisingly, the highest level of education belongs to the people who did not answer the question on Marital Status.  This is possibly because people who have a higher level of education may tend to have more pride and so they avoided answering the marital status question in order to preserve their dignity. After, "no answer", the highest education level goes to the people who are never married.  This could be because they are more focused on their careers than in relationships.  This would also account for why "Divorced" is the third highest in education.  Widowed has the lowest mean education level.  For this I used variables marital and educ(education).
+
+```{r}
+levels(dat$marital)
+
+dat$marital<-factor(dat$marital, levels=(c("Married","Never married","Divorced","Widowed","Separated","No answer")))
+
+ggplot(dat, aes(x=marital, y=educ))+geom_boxplot()+ggtitle("Marital Status vs. Education Level")+xlab('Marital Status')+ylab('Education Level')
+
+AvgEduInMar<-dat%>%
+  group_by(marital)%>%
+  summarize(mean_education=mean(educ,na.rm=TRUE))%>%
+  arrange(mean_education)
+
+AvgEduInMar
+
+ggplot(AvgEduInMar, aes(x=marital, weight=mean_education))+geom_bar()+coord_flip()+ggtitle("Mean Education Year by Marital Status")+ylab("Highest Year of Education (mean)") +xlab("Marital Status")
+
+dat%>%
+  select(marital, educ)%>%
+  group_by(marital)%>%
+  count(educ)
+```
+
+
+6a. My first question is "how does the respondent's sex affect the happiness and marital status?" This question is similar to question 4, but replacing political party with gender. We can see that respondents that are married are still the happiest, regardless of gender. Married women have the most happy repsonses. For this I used the variables happiness, sex, and marital.
 ```{r}
 ggplot(dat, aes(x=marital, fill=happiness)) + geom_bar() + facet_wrap(~sex, scales="free_x") + ggtitle("Happiness, Marital Status, and Sex") + theme(axis.text.x = element_text(angle = 90))
 
 dat%>%
   select(happiness, sex, marital)%>%
   group_by(sex, marital)%>%
+  count(happiness)
+```
+
+6b. My second question is "how does income level affect happiness?"  From the graphs below it is clear that most respondents identify as "Pretty happy" and have an income of $25,000+.  Interestingly, the greatest number of unhappy respondents also make $25,000+.  Perhaps the most interesting thing however, is that the second highest group of happy people makes between $10,000 and $15,000.  It would be natural to assume that they would make between $15,000 and $25,000, but that is not the case. For this I used variables happiness, and income.
+
+```{r}
+happy$income<-factor(happy$income, levels=(c("Lt $1000","$1000 to 2999","$3000 to 3999","$4000 to 4999","$5000 to 5999","$6000 to 6999","$7000 to 7999", "$8000 to 9999", "$10000 - 14999", "$15000 - 19999","$20000 - 24999", "$25000 or more","Don't know","Refused","Not applicable","No answer")))
+
+ggplot(happy, aes(x=income,na.rm=TRUE))+geom_bar(na.rm=TRUE)+coord_flip()+ggtitle("Number of Happy Respondents and Their Family Income")+xlab('Family Income')+ylab('Number of Happy Respondents')
+
+hapState$income<-factor(hapState$income, levels=(c("Lt $1000","$1000 to 2999","$3000 to 3999","$4000 to 4999","$5000 to 5999","$6000 to 6999","$7000 to 7999", "$8000 to 9999", "$10000 - 14999", "$15000 - 19999","$20000 - 24999", "$25000 or more","Don't know","Refused","Not applicable", "No answer")))
+ggplot(hapState, aes(x=income, fill=happiness))+geom_bar(position='dodge')+ggtitle("Happiness vs. Family Income")+xlab('Family Income')+ylab('Number of Respondents')+coord_flip()
+
+dat%>%
+  select(happiness, income)%>%
+  group_by(income)%>%
   count(happiness)
 ```
